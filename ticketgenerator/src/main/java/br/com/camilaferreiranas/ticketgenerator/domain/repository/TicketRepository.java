@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface TicketRepository {
 
-    void save(Ticket ticket);
+    Ticket save(Ticket ticket);
     List<Ticket> findAll();
 }
