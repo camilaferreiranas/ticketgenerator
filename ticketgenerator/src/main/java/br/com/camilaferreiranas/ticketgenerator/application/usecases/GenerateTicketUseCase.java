@@ -9,10 +9,10 @@ import br.com.camilaferreiranas.ticketgenerator.infrastructure.feign.GithubClien
 import br.com.camilaferreiranas.ticketgenerator.interfaces.dtos.GithubUserResponseDTO;
 import br.com.camilaferreiranas.ticketgenerator.interfaces.dtos.TicketRequestDTO;
 import br.com.camilaferreiranas.ticketgenerator.interfaces.dtos.TicketResponseDTO;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Service
 public class GenerateTicketUseCase {
@@ -31,10 +31,11 @@ public class GenerateTicketUseCase {
 
     public TicketResponseDTO execute(TicketRequestDTO dto) {
 
-        GithubUserResponseDTO githubResponse = githubClient.getUser(dto.githubProfile());
+
+        try {
+            GithubUserResponseDTO githubResponse = githubClient.getUser(dto.githubProfile());
 
 
-        if (githubResponse.login() != null) { //mudar
             Ticket ticket = new TicketBuilder()
                     .name(dto.name()).githubProfile(dto.githubProfile()).conference(dto.conference())
                     .email(dto.email())
@@ -45,11 +46,9 @@ public class GenerateTicketUseCase {
             var ticketSaved = repository.save(ticket);
             emailQueueRepository.send(ticketSaved.getEmail());
             return new TicketResponseDTO(ticketSaved.getName(), ticketSaved.getgithubProfile(), ticketSaved.getUrlImage(), ticketSaved.getEmail());
-        } else {
+        } catch (FeignException.NotFound e) {
             throw new UserNotFoundGithubException("Usuário não existe no Github");
         }
-        // validar usuario do github
-        // salvar
-        // manda email para fila e enviar e-mail de confirmação
+
     }
 }
